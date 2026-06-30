@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1060" viewBox="0 0 1700 1060">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"/>
+</marker>
+</defs>
+<rect x="0" y="0" width="100%" height="100%" fill="#f8fafc"/>
+<style>
+text{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:13px}
+.title{font-size:20px;font-weight:700}
+.box{fill:#ffffff;stroke:#334155;stroke-width:1.4;rx:8;ry:8}
+.soft{fill:#eef2ff;stroke:#475569;stroke-width:1.2;rx:8;ry:8}
+.actor{fill:#ecfeff;stroke:#155e75;stroke-width:1.2;rx:18;ry:18}
+.line{stroke:#1f2937;stroke-width:1.4;fill:none;marker-end:url(#arrow)}
+.dash{stroke:#334155;stroke-width:1.2;fill:none;stroke-dasharray:6 5;marker-end:url(#arrow)}
+.small{font-size:12px;fill:#334155}
+</style>
+<text x="30" y="40" class="title">Fake News Detector - UML Activity Diagram</text>
+<rect class="actor" x="70" y="90" width="260" height="56"/>
+<text x="82" y="124">Start</text>
+<rect class="box" x="70" y="180" width="300" height="56"/>
+<text x="82" y="214">Choose input: URL / Text / Headline</text>
+<rect class="box" x="70" y="270" width="220" height="56"/>
+<text x="82" y="304">Validate input</text>
+<rect class="box" x="70" y="360" width="220" height="56"/>
+<text x="82" y="394">POST /api/analyze</text>
+<rect class="box" x="70" y="450" width="240" height="56"/>
+<text x="82" y="484">URL? fetch article</text>
+<rect class="box" x="70" y="540" width="260" height="56"/>
+<text x="82" y="574">Normalize text for analysis</text>
+<rect class="box" x="70" y="630" width="240" height="56"/>
+<text x="82" y="664">Run NLP classifier</text>
+<rect class="box" x="70" y="720" width="260" height="56"/>
+<text x="82" y="754">Extract signal phrases</text>
+<rect class="box" x="70" y="810" width="260" height="56"/>
+<text x="82" y="844">Run fact-checking search</text>
+<rect class="box" x="420" y="810" width="260" height="56"/>
+<text x="432" y="844">Score source credibility</text>
+<rect class="box" x="760" y="810" width="300" height="56"/>
+<text x="772" y="844">Aggregate verdict + score</text>
+<rect class="box" x="1120" y="810" width="240" height="56"/>
+<text x="1132" y="844">Store AnalysisRecord</text>
+<rect class="box" x="1120" y="900" width="220" height="56"/>
+<text x="1132" y="934">Cache response</text>
+<rect class="box" x="760" y="900" width="300" height="56"/>
+<text x="772" y="934">Return AnalyzeResponse JSON</text>
+<rect class="box" x="420" y="900" width="260" height="56"/>
+<text x="432" y="934">Render results on UI</text>
+<rect class="actor" x="70" y="900" width="220" height="56"/>
+<text x="82" y="934">End</text>
+<line class="line" x1="200" y1="146" x2="220" y2="180"/>
+<line class="line" x1="220" y1="236" x2="180" y2="270"/>
+<line class="line" x1="180" y1="326" x2="180" y2="360"/>
+<line class="line" x1="180" y1="416" x2="190" y2="450"/>
+<line class="line" x1="190" y1="506" x2="200" y2="540"/>
+<line class="line" x1="200" y1="596" x2="190" y2="630"/>
+<line class="line" x1="190" y1="686" x2="200" y2="720"/>
+<line class="line" x1="200" y1="776" x2="200" y2="810"/>
+<line class="line" x1="330" y1="838" x2="420" y2="838"/>
+<line class="line" x1="680" y1="838" x2="760" y2="838"/>
+<line class="line" x1="1060" y1="838" x2="1120" y2="838"/>
+<line class="line" x1="1240" y1="866" x2="1240" y2="900"/>
+<line class="line" x1="1120" y1="928" x2="1060" y2="928"/>
+<line class="line" x1="760" y1="928" x2="680" y2="928"/>
+<line class="line" x1="420" y1="928" x2="290" y2="928"/>
+<text x="340" y="500" class="small">if URL then fetch; else continue with input text</text>
+</svg>

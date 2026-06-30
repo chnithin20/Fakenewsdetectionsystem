@@ -1,0 +1,27 @@
+flowchart LR
+    user([User])
+    admin([Developer/Admin])
+
+    subgraph Fake News Detector System
+      UC1((Analyze URL))
+      UC2((Analyze Article Text))
+      UC3((Analyze Headline))
+      UC4((View Latest Results))
+      UC5((View Analysis History))
+      UC6((Open Past Analysis by ID))
+      UC7((Check Service Health))
+      UC8((Run Model Training Script))
+      UC9((Evaluate Model Performance))
+    end
+
+    user --> UC1
+    user --> UC2
+    user --> UC3
+    user --> UC4
+    user --> UC5
+    user --> UC6
+
+    admin --> UC7
+    admin --> UC8
+    admin --> UC9
+    

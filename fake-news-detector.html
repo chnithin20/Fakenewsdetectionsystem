@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VerifyAI &mdash; Fake News Detector</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0b0f; --bg2: #111318; --bg3: #181b22;
+    --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.15);
+    --text: #e8e9ee; --text-muted: #7a7d8a; --text-dim: #3f4251;
+    --accent: #00e5a0; --accent2: #00b8ff;
+    --danger: #ff4d6a; --warn: #ffaa00; --safe: #00e5a0;
+    --font-head: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif; --font-mono: 'DM Mono', monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: 0; }
+  .wrap { position: relative; z-index: 1; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 22px 48px; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; background: rgba(10,11,15,0.85); }
+  .logo { font-family: var(--font-head); font-weight: 800; font-size: 20px; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+  .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 8px var(--accent);transform:scale(1)} 50%{box-shadow:0 0 20px var(--accent);transform:scale(1.15)} }
+  .nav-links { display: flex; gap: 28px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); list-style: none; }
+  .nav-links a { color: inherit; text-decoration: none; transition: color 0.2s; cursor: pointer; }
+  .nav-links a:hover { color: var(--accent); }
+  .badge-live { font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(0,229,160,0.3); color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+  .hero { padding: 80px 48px 60px; max-width: 900px; }
+  .hero-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .hero-tag::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+  .hero h1 { font-family: var(--font-head); font-size: clamp(36px,6vw,72px); font-weight: 800; line-height: 1.0; letter-spacing: -2px; margin-bottom: 20px; }
+  .hero h1 span { color: transparent; -webkit-text-stroke: 1px rgba(0,229,160,0.5); }
+  .hero p { font-size: 16px; color: var(--text-muted); max-width: 520px; line-height: 1.7; margin-bottom: 40px; }
+  .input-panel { margin: 0 48px 60px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .tab { padding: 16px 24px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.5px; color: var(--text-muted); background: none; border: none; cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(0,229,160,0.04); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .tab-content { display: none; padding: 28px; }
+  .tab-content.active { display: block; }
+  .input-group { position: relative; }
+  .input-group input, .input-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 16px 20px; outline: none; resize: none; transition: border-color 0.2s; }
+  .input-group textarea { min-height: 140px; line-height: 1.6; }
+  .input-group input:focus, .input-group textarea:focus { border-color: rgba(0,229,160,0.4); box-shadow: 0 0 0 3px rgba(0,229,160,0.06); }
+  .input-group input::placeholder, .input-group textarea::placeholder { color: var(--text-dim); }
+  .input-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+  .hint { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+  .btn-analyze { display: flex; align-items: center; gap: 10px; padding: 13px 28px; background: var(--accent); color: #040905; font-family: var(--font-head); font-weight: 700; font-size: 14px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px; }
+  .btn-analyze:hover { background: #00ffb0; box-shadow: 0 0 24px rgba(0,229,160,0.4); transform: translateY(-1px); }
+  .btn-analyze:active { transform: translateY(0); }
+  .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .loading-bar { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent), transparent); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; display: none; }
+  .loading-bar.active { display: block; }
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+  .loading-state { padding: 28px; display: none; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .loading-state.active { display: block; }
+  .loading-steps { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .loading-step { display: flex; align-items: center; gap: 12px; opacity: 0; transform: translateX(-8px); animation: stepIn 0.4s ease forwards; }
+  @keyframes stepIn { to { opacity: 1; transform: translateX(0); } }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; transition: background 0.3s; }
+  .step-dot.done { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .step-dot.running { background: var(--accent2); animation: blink 0.6s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .results { margin: 0 48px 80px; display: none; }
+  .results.visible { display: block; animation: fadeUp 0.5s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .results-title { font-family: var(--font-head); font-weight: 700; font-size: 22px; }
+  .analyze-again { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: all 0.2s; }
+  .analyze-again:hover { border-color: var(--border-strong); color: var(--text); }
+  .btn-share { font-family: var(--font-mono); font-size: 11px; color: var(--accent); background: rgba(0,229,160,0.05); border: 1px solid rgba(0,229,160,0.2); border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: all 0.2s; margin-left: 8px; }
+  .btn-share:hover { background: rgba(0,229,160,0.1); border-color: var(--accent); }
+  .btn-clear { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); background: none; border: none; cursor: pointer; transition: color 0.2s; }
+  .btn-clear:hover { color: var(--danger); }
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 24px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .card:hover { border-color: var(--border-strong); }
+  .card.full-width { grid-column: 1 / -1; }
+  .card-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; }
+  .verdict-card { grid-column: 1 / -1; }
+  .verdict-body { display: flex; align-items: center; gap: 32px; }
+  .verdict-badge { flex-shrink: 0; width: 100px; height: 100px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--font-head); font-weight: 800; border: 3px solid currentColor; position: relative; }
+  .verdict-badge::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 1px solid currentColor; opacity: 0.25; }
+  .verdict-badge.fake { color: var(--danger); background: rgba(255,77,106,0.08); }
+  .verdict-badge.suspicious { color: var(--warn); background: rgba(255,170,0,0.08); }
+  .verdict-badge.real { color: var(--safe); background: rgba(0,229,160,0.08); }
+  .verdict-badge .v-pct { font-size: 28px; line-height: 1; }
+  .verdict-badge .v-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.8; }
+  .verdict-info { flex: 1; }
+  .verdict-heading { font-family: var(--font-head); font-weight: 700; font-size: 28px; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .verdict-heading.fake { color: var(--danger); }
+  .verdict-heading.suspicious { color: var(--warn); }
+  .verdict-heading.real { color: var(--safe); }
+  .verdict-sub { color: var(--text-muted); font-size: 14px; max-width: 480px; }
+  .score-bar-wrap { margin-top: 20px; }
+  .score-bar-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 6px; }
+  .score-bar-track { height: 6px; border-radius: 3px; background: var(--bg3); overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--safe), var(--warn), var(--danger)); transform-origin: left; transform: scaleX(0); transition: transform 1s cubic-bezier(0.16,1,0.3,1); }
+  .metric-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-name { font-size: 13px; color: var(--text-muted); }
+  .metric-value { font-family: var(--font-mono); font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 500; }
+  .metric-value.high { background: rgba(255,77,106,0.12); color: var(--danger); }
+  .metric-value.medium { background: rgba(255,170,0,0.12); color: var(--warn); }
+  .metric-value.low { background: rgba(0,229,160,0.12); color: var(--safe); }
+  .claims-list { display: flex; flex-direction: column; gap: 10px; }
+  .claim-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; font-size: 13px; }
+  .claim-icon { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; margin-top: 1px; }
+  .claim-icon.debunked { background: rgba(255,77,106,0.15); color: var(--danger); }
+  .claim-icon.check { background: rgba(255,170,0,0.15); color: var(--warn); }
+  .claim-icon.verified { background: rgba(0,229,160,0.15); color: var(--safe); }
+  .claim-text { flex: 1; color: var(--text-muted); line-height: 1.5; }
+  .claim-text strong { color: var(--text); font-weight: 500; }
+  .claim-source { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+  .source-body { display: flex; gap: 20px; align-items: center; }
+  .domain-badge { flex-shrink: 0; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; font-family: var(--font-mono); font-size: 13px; text-align: center; min-width: 130px; }
+  .domain-name { color: var(--text); margin-bottom: 6px; word-break: break-all; }
+  .domain-score { font-size: 24px; font-weight: 700; font-family: var(--font-head); }
+  .domain-score.high { color: var(--safe); }
+  .domain-score.medium { color: var(--warn); }
+  .domain-score.low { color: var(--danger); }
+  .source-meta { flex: 1; }
+  .source-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); }
+  .signals-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .signal-chip { font-family: var(--font-mono); font-size: 11px; padding: 6px 12px; border-radius: 6px; border: 1px solid; cursor: default; transition: transform 0.15s; }
+  .signal-chip:hover { transform: scale(1.05); }
+  .signal-chip.red { border-color: rgba(255,77,106,0.4); color: var(--danger); background: rgba(255,77,106,0.08); }
+  .signal-chip.orange { border-color: rgba(255,170,0,0.4); color: var(--warn); background: rgba(255,170,0,0.08); }
+  .signal-chip.green { border-color: rgba(0,229,160,0.3); color: var(--safe); background: rgba(0,229,160,0.06); }
+  .history-section { margin: 0 48px 80px; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .section-title { font-family: var(--font-head); font-weight: 700; font-size: 18px; }
+  .section-count { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+  .history-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .history-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: all 0.2s; }
+  .history-item:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+  .history-verdict { display: inline-block; font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 10px; margin-bottom: 10px; }
+  .history-verdict.fake { background: rgba(255,77,106,0.12); color: var(--danger); }
+  .history-verdict.suspicious { background: rgba(255,170,0,0.12); color: var(--warn); }
+  .history-verdict.real { background: rgba(0,229,160,0.1); color: var(--safe); }
+  .history-headline { font-size: 13px; font-weight: 500; line-height: 1.5; color: var(--text); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden; }
+  .history-meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); display: flex; gap: 12px; }
+  .divider { margin: 0 48px 60px; height: 1px; background: var(--border); }
+  .error-card { border-color: rgba(255,77,106,0.3) !important; }
+  .error-msg { color: var(--danger); font-size: 14px; margin-top: 8px; }
+  .error-hint { color: var(--text-muted); font-size: 12px; margin-top: 6px; font-family: var(--font-mono); }
+  .error-hint code { color: var(--accent); }
+  footer { border-top: 1px solid var(--border); padding: 32px 48px; display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+  footer a { color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+  footer a:hover { color: var(--accent); }
+  @media (max-width: 768px) {
+    header { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .hero { padding: 48px 20px 40px; }
+    .input-panel { margin: 0 20px 40px; }
+    .results { margin: 0 20px 60px; }
+    .results-grid { grid-template-columns: 1fr; }
+    .history-section { margin: 0 20px 60px; }
+    .history-grid { grid-template-columns: 1fr; }
+    .divider { margin: 0 20px 40px; }
+    .verdict-body { flex-direction: column; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    VerifyAI
+  </div>
+  <ul class="nav-links">
+    <li><a onclick="scrollToAnalyzer()">Analyzer</a></li>
+    <li><a onclick="scrollToHistory()">History</a></li>
+    <li><a href="http://localhost:8000/api/docs" target="_blank">API Docs</a></li>
+    <li><a href="http://localhost:8000/health" target="_blank">Health</a></li>
+  </ul>
+  <div class="badge-live">&#9679; Live</div>
+</header>
+
+<div class="hero">
+  <div class="hero-tag">AI-Powered Analysis</div>
+  <h1>Detect <span>Fake</span><br/>News Instantly</h1>
+  <p>Analyze articles, URLs, or headlines using RoBERTa NLP models, real-time fact-checking APIs, and source credibility scoring.</p>
+</div>
+
+<div class="input-panel" id="analyzer-section">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('url', this)">&#8599; URL</button>
+    <button class="tab" onclick="switchTab('text', this)">&#8801; Article Text</button>
+    <button class="tab" onclick="switchTab('headline', this)">&#10022; Headline</button>
+  </div>
+
+  <div id="tab-url" class="tab-content active">
+    <div class="input-group">
+      <input type="url" id="url-input" placeholder="https://news-article-url.com/story..."/>
+    </div>
+    <div class="input-footer">
+      <span class="hint">We'll fetch and analyze the full article content</span>
+      <button class="btn-analyze" id="btn-url" onclick="runAnalysis('url')">
+        <span>&#9889;</span> Analyze
+      </button>
+    </div>
+  </div>
+
+  <div id="tab-text" class="tab-content">
+    <div class="input-group">
+      <textarea id="text-input" placeholder="Paste the full article text here...&#10;&#10;Minimum 50 characters for accurate analysis."></textarea>
+    </div>
+    <div class="input-footer">
+      <span class="hint" id="char-count">0 characters</span>
+      <button class="btn-analyze" id="btn-text" onclick="runAnalysis('text')">
+        <span>&#9889;</span> Analyze
+      </button>
+    </div>
+  </div>
+
+  <div id="tab-headline" class="tab-content">
+    <div class="input-group">
+      <input type="text" id="headline-input" placeholder="Enter a news headline..."/>
+    </div>
+    <div class="input-footer">
+      <span class="hint">Quick analysis based on headline patterns</span>
+      <button class="btn-analyze" id="btn-headline" onclick="runAnalysis('headline')">
+        <span>&#9889;</span> Analyze
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-bar" id="loading-bar"></div>
+  <div class="loading-state" id="loading-state">
+    <ul class="loading-steps" id="loading-steps"></ul>
+  </div>
+</div>
+
+<div class="results" id="results">
+  <div class="results-header">
+    <div class="results-title">Analysis Report</div>
+    <div>
+      <button class="analyze-again" onclick="resetAnalysis()">&#8592; Analyze Another</button>
+      <button class="btn-share" id="btn-share" onclick="shareResults()">&#8618; Share Result</button>
+    </div>
+  </div>
+  <div class="results-grid" id="results-grid"></div>
+</div>
+
+<div class="divider"></div>
+
+<div class="history-section" id="history-section">
+  <div class="section-head">
+    <div class="section-title">Recent Analyses</div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="section-count" id="history-count">0 items</span>
+      <button class="btn-clear" onclick="clearHistoryUI()">Clear Grid</button>
+    </div>
+  </div>
+  <div class="history-grid" id="history-grid"></div>
+</div>
+
+<footer>
+  <span>VerifyAI &copy; 2025 &mdash; Powered by RoBERTa + Google Fact Check API</span>
+  <span>
+    <a href="http://localhost:8000/api/docs" target="_blank">API Docs</a>
+    &nbsp;&middot;&nbsp;
+    <a href="http://localhost:8000/health" target="_blank">Health Check</a>
+  </span>
+</footer>
+
+</div>
+
+<script>
+const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8000' : window.location.origin;
+
+const STEPS = [
+  'Fetching article content...',
+  'Running NLP preprocessing...',
+  'Classifying with RoBERTa model...',
+  'Checking claims via Fact Check API...',
+  'Scoring source credibility...',
+  'Computing final verdict...'
+];
+
+let analysisHistory = [];
+
+// ── Navigation ──────────────────────────────────────────────────────────────
+function scrollToAnalyzer() {
+  document.getElementById('analyzer-section').scrollIntoView({ behavior: 'smooth' });
+}
+function scrollToHistory() {
+  document.getElementById('history-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+  // Clear any error state on tab switch
+  document.getElementById('results').classList.remove('visible');
+}
+
+// ── Char counter ─────────────────────────────────────────────────────────────
+document.getElementById('text-input').addEventListener('input', function() {
+  document.getElementById('char-count').textContent = this.value.length + ' characters';
+});
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function scoreClass(score) {
+  if (score >= 65) return 'high';
+  if (score >= 35) return 'medium';
+  return 'low';
+}
+function metricLevel(val) {
+  if (val >= 0.65) return 'high';
+  if (val >= 0.35) return 'medium';
+  return 'low';
+}
+function setButtonsDisabled(disabled) {
+  ['btn-url','btn-text','btn-headline'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = disabled;
+  });
+}
+
+// ── Main analysis function ───────────────────────────────────────────────────
+async function runAnalysis(type) {
+  const inputEl = document.getElementById(type + '-input');
+  const val = (inputEl?.value || '').trim();
+
+  // Validation
+  if (!val) {
+    flashError(inputEl);
+    return;
+  }
+  if (type === 'url') {
+    try { new URL(val); } catch {
+      flashError(inputEl, 'Please enter a valid URL starting with https://');
+      return;
+    }
+    if (!val.startsWith('http')) {
+      flashError(inputEl, 'URL must start with http:// or https://');
+      return;
+    }
+  }
+  if (type === 'text' && val.length < 50) {
+    flashError(inputEl, 'Please enter at least 50 characters');
+    return;
+  }
+  if (type === 'headline' && val.length < 5) {
+    flashError(inputEl, 'Headline too short');
+    return;
+  }
+
+  document.getElementById('results').classList.remove('visible');
+  setButtonsDisabled(true);
+  showLoading();
+
+  // Animate steps while API call runs
+  let step = 0;
+  const stepsEl = document.getElementById('loading-steps');
+  stepsEl.innerHTML = '';
+
+  const addStep = (i) => {
+    const li = document.createElement('li');
+    li.className = 'loading-step';
+    li.style.animationDelay = (i * 0.15) + 's';
+    li.innerHTML = '<div class="step-dot running" id="dot-' + i + '"></div><span>' + STEPS[i] + '</span>';
+    stepsEl.appendChild(li);
+  };
+
+  addStep(0);
+  const interval = setInterval(() => {
+    const prev = document.getElementById('dot-' + step);
+    if (prev) { prev.classList.remove('running'); prev.classList.add('done'); }
+    step++;
+    if (step < STEPS.length) addStep(step);
+  }, 600);
+
+  try {
+    const resp = await fetch(API_BASE + '/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type, content: val }),
+    });
+
+    clearInterval(interval);
+    // Complete remaining steps
+    for (let i = step; i <= STEPS.length - 1; i++) {
+      const prev = document.getElementById('dot-' + (i - 1));
+      if (prev) { prev.classList.remove('running'); prev.classList.add('done'); }
+      if (i < STEPS.length) {
+        addStep(i);
+        const dot = document.getElementById('dot-' + i);
+        if (dot) { dot.classList.remove('running'); dot.classList.add('done'); }
+      }
+    }
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: 'HTTP ' + resp.status }));
+      throw new Error(err.detail || 'Analysis failed');
+    }
+
+    const data = await resp.json();
+    setTimeout(() => {
+      hideLoading();
+      setButtonsDisabled(false);
+      showResults(data, val);
+    }, 400);
+
+  } catch (err) {
+    clearInterval(interval);
+    hideLoading();
+    setButtonsDisabled(false);
+    showError(err.message);
+  }
+}
+
+function flashError(inputEl, msg) {
+  inputEl.style.borderColor = 'rgba(255,77,106,0.6)';
+  if (msg) {
+    const orig = inputEl.placeholder;
+    inputEl.placeholder = msg;
+    setTimeout(() => { inputEl.style.borderColor = ''; inputEl.placeholder = orig; }, 2500);
+  } else {
+    setTimeout(() => inputEl.style.borderColor = '', 1500);
+  }
+}
+
+function showLoading() {
+  document.getElementById('loading-bar').classList.add('active');
+  document.getElementById('loading-state').classList.add('active');
+}
+function hideLoading() {
+  document.getElementById('loading-bar').classList.remove('active');
+  document.getElementById('loading-state').classList.remove('active');
+  document.getElementById('loading-steps').innerHTML = '';
+}
+
+// ── Render results ───────────────────────────────────────────────────────────
+function showResults(data, input) {
+  const score   = data.credibility_score;
+  const verdict = data.verdict;
+  const ms      = data.model_scores;
+  const src     = data.source_credibility;
+  const srcCls  = scoreClass(src.score);
+
+  const metrics = [
+    { name: 'NLP Model (RoBERTa)',      value: Math.round(ms.confidence * 100) + '% ' + ms.label,  level: ms.label === 'fake' ? 'high' : 'low' },
+    { name: 'Sensationalism Score',     value: (ms.sensationalism <= 0.33 ? 'Low' : ms.sensationalism <= 0.66 ? 'Medium' : 'High') + ' (' + ms.sensationalism.toFixed(2) + ')', level: metricLevel(ms.sensationalism) },
+    { name: 'Clickbait Probability',    value: Math.round(ms.clickbait_probability * 100) + '%',    level: metricLevel(ms.clickbait_probability) },
+    { name: 'Emotional Language Index', value: ms.emotional_language_index.toFixed(2) + ' / 1.0',  level: metricLevel(ms.emotional_language_index) },
+  ];
+
+  const iconMap = { debunked: { cls: 'debunked', sym: '&#10005;' }, check: { cls: 'check', sym: '?' }, verified: { cls: 'verified', sym: '&#10003;' } };
+
+  const claimsHtml = data.fact_check_claims.length
+    ? data.fact_check_claims.map(c => {
+        const ic = iconMap[c.status] || iconMap.check;
+        return '<div class="claim-item"><div class="claim-icon ' + ic.cls + '">' + ic.sym + '</div><div><div class="claim-text"><strong>' + escHtml(c.text) + '</strong></div><div class="claim-source">' + escHtml(c.source) + '</div></div></div>';
+      }).join('')
+    : '<div style="color:var(--text-dim);font-size:13px;font-family:var(--font-mono)">No fact-check claims found for this content.</div>';
+
+  const signalsHtml = data.signal_phrases.length
+    ? data.signal_phrases.map(s => '<span class="signal-chip ' + s.level + '">' + escHtml(s.text) + '</span>').join('')
+    : '<div style="color:var(--text-dim);font-size:13px;font-family:var(--font-mono)">No signal phrases detected.</div>';
+
+  document.getElementById('results-grid').innerHTML =
+    '<div class="card verdict-card">' +
+      '<div class="card-label">Verdict</div>' +
+      '<div class="verdict-body">' +
+        '<div class="verdict-badge ' + verdict + '"><div class="v-pct">' + score + '%</div><div class="v-label">credibility</div></div>' +
+        '<div class="verdict-info">' +
+          '<div class="verdict-heading ' + verdict + '">' + escHtml(data.label) + '</div>' +
+          '<div class="verdict-sub">' + escHtml(data.summary) + '</div>' +
+          '<div class="score-bar-wrap"><div class="score-bar-labels"><span>Real</span><span>Suspicious</span><span>Fake</span></div>' +
+          '<div class="score-bar-track"><div class="score-bar-fill" id="score-bar-fill"></div></div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-label">Model Confidence Scores</div>' +
+      metrics.map(m => '<div class="metric-row"><span class="metric-name">' + m.name + '</span><span class="metric-value ' + m.level + '">' + m.value + '</span></div>').join('') +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-label">Source Credibility</div>' +
+      '<div class="source-body">' +
+        '<div class="domain-badge"><div class="domain-name">' + escHtml(src.domain) + '</div><div class="domain-score ' + srcCls + '">' + src.score + '</div><div style="font-size:10px;color:var(--text-dim);margin-top:4px">/ 100</div></div>' +
+        '<div class="source-meta"><div style="font-size:13px;color:var(--text-muted)">Political Lean: <strong style="color:var(--text)">' + escHtml(src.bias) + '</strong></div><div class="source-tags">' + src.tags.map(t => '<span class="tag">' + escHtml(t) + '</span>').join('') + '</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card full-width"><div class="card-label">Fact-Check Results</div><div class="claims-list">' + claimsHtml + '</div></div>' +
+    '<div class="card full-width"><div class="card-label">Detected Signal Phrases</div><div class="signals-grid">' + signalsHtml + '</div></div>';
+
+  const resultsEl = document.getElementById('results');
+  resultsEl.classList.add('visible');
+  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Animate score bar
+  setTimeout(() => {
+    const fill = document.getElementById('score-bar-fill');
+    if (fill) fill.style.transform = 'scaleX(' + ((100 - score) / 100) + ')';
+  }, 200);
+
+  addToHistory(data, input);
+}
+
+function shareResults() {
+  const verdict = document.querySelector('.verdict-heading')?.textContent || 'Analysis';
+  const score = document.querySelector('.v-pct')?.textContent || '';
+  const summary = document.querySelector('.verdict-sub')?.textContent || '';
+  const text = `VerifyAI Report: ${verdict} (${score})\n\n${summary}\n\nAnalyzed with VerifyAI Fake News Detector.`;
+  
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btn-share');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '&#10003; Copied!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  });
+}
+
+function showError(msg) {
+  document.getElementById('results-grid').innerHTML =
+    '<div class="card full-width error-card">' +
+      '<div class="card-label">Error</div>' +
+      '<div class="error-msg">' + escHtml(msg) + '</div>' +
+      '<div class="error-hint">Make sure the backend is running: <code>python backend/main.py</code></div>' +
+    '</div>';
+  document.getElementById('results').classList.add('visible');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── History ──────────────────────────────────────────────────────────────────
+function addToHistory(data, input) {
+  analysisHistory.unshift({ data, input, time: new Date() });
+  renderHistory();
+}
+
+function renderHistory() {
+  const grid = document.getElementById('history-grid');
+  document.getElementById('history-count').textContent = analysisHistory.length + ' items';
+  if (!analysisHistory.length) {
+    grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;font-family:var(--font-mono)">No analyses yet. Run your first check above.</div>';
+    return;
+  }
+  grid.innerHTML = analysisHistory.slice(0, 6).map(h => {
+    const short = h.input.length > 90 ? h.input.slice(0, 90) + '...' : h.input;
+    const timeStr = h.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return '<div class="history-item" onclick="replayHistory(' + analysisHistory.indexOf(h) + ')">' +
+      '<div class="history-verdict ' + h.data.verdict + '">' + escHtml(h.data.label) + '</div>' +
+      '<div class="history-headline">' + escHtml(short) + '</div>' +
+      '<div class="history-meta"><span>' + h.data.credibility_score + '% credibility</span><span>' + timeStr + '</span></div>' +
+    '</div>';
+  }).join('');
+}
+
+async function replayHistory(index) {
+  const h = analysisHistory[index];
+  if (!h) return;
+
+  // If we already have the full data, just show it
+  if (h.data.model_scores) {
+    showResults(h.data, h.input);
+    return;
+  }
+
+  // Otherwise, fetch the full analysis by ID
+  showLoading();
+  try {
+    const resp = await fetch(`${API_BASE}/api/analysis/${h.id}`);
+    if (!resp.ok) throw new Error("Could not retrieve full analysis");
+    const data = await resp.json();
+    h.data = data; // Cache back into local history
+    hideLoading();
+    showResults(data, h.input);
+  } catch (err) {
+    hideLoading();
+    showError(err.message);
+  }
+}
+
+function clearHistoryUI() {
+  if (confirm('Clear only the current session grid display? (Data stays on server)')) {
+    analysisHistory = [];
+    renderHistory();
+  }
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetAnalysis() {
+  document.getElementById('results').classList.remove('visible');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  ['url-input','text-input','headline-input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('char-count').textContent = '0 characters';
+}
+
+// ── Load history from backend on page load ────────────────────────────────────
+async function loadHistory() {
+  try {
+    const resp = await fetch(API_BASE + '/api/history?per_page=6');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.items && data.items.length) {
+      analysisHistory = data.items.map(item => ({
+        id: item.id,
+        data: { 
+          verdict: item.verdict, 
+          label: item.label, 
+          credibility_score: item.credibility_score 
+          // Note: full fields fetched on-demand in replayHistory
+        },
+        input: item.input_preview || '',
+        time: new Date(item.analyzed_at),
+      }));
+      renderHistory();
+    }
+  } catch (e) { /* backend not running, skip */ }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderHistory();
+loadHistory();
+</script>
+</body>
+</html>

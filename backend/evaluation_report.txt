@@ -1,0 +1,10 @@
+FAKE NEWS DETECTION EVALUATION REPORT
+========================================
+              precision    recall  f1-score   support
+
+        REAL       1.00      0.44      0.61        32
+        FAKE       0.64      1.00      0.78        32
+
+    accuracy                           0.72        64
+   macro avg       0.82      0.72      0.69        64
+weighted avg       0.82      0.72      0.69        64

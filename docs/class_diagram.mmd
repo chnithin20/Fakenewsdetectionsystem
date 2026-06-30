@@ -1,0 +1,91 @@
+classDiagram
+    class FastAPIApp {
+      +root()
+      +health()
+      +analyze(req)
+      +get_history(page,per_page)
+      +get_analysis(analysis_id)
+    }
+
+    class AnalyzeRequest {
+      +type: InputType
+      +content: str
+    }
+    class AnalyzeResponse {
+      +id: str
+      +verdict: VerdictLabel
+      +credibility_score: int
+      +summary: str
+      +model_scores: ModelScores
+      +source_credibility: SourceCredibility
+      +fact_check_claims: FactCheckClaim[]
+      +signal_phrases: SignalPhrase[]
+    }
+    class ModelScores {
+      +label: VerdictLabel
+      +confidence: float
+      +sensationalism: float
+      +clickbait_probability: float
+      +emotional_language_index: float
+    }
+    class SourceCredibility {
+      +domain: str
+      +score: int
+      +bias: str
+      +tags: list[str]
+    }
+    class FactCheckClaim {
+      +text: str
+      +status: ClaimStatus
+      +source: str
+      +url: str?
+    }
+    class SignalPhrase {
+      +text: str
+      +level: red|orange|green
+    }
+
+    class AnalysisEngine {
+      +run_analysis(req) AnalyzeResponse
+    }
+    class NLPClassifier {
+      +classify_text(text) NLPResult
+      +extract_signal_phrases(text) SignalPhrase[]
+    }
+    class FactChecker {
+      +check_claims(text) FactCheckResult[]
+    }
+    class SourceCredibilityService {
+      +score_domain(domain,text) CredibilityResult
+    }
+    class ArticleFetcher {
+      +fetch_article(url) FetchedArticle
+    }
+    class Cache {
+      +get_cached(key)
+      +set_cached(key,val)
+    }
+    class AnalysisRecord {
+      +id: str
+      +verdict: str
+      +credibility_score: int
+      +summary: str
+      +analyzed_at: datetime
+    }
+
+    FastAPIApp --> AnalyzeRequest
+    FastAPIApp --> AnalysisEngine
+    FastAPIApp --> Cache
+    FastAPIApp --> AnalysisRecord
+
+    AnalysisEngine --> NLPClassifier
+    AnalysisEngine --> FactChecker
+    AnalysisEngine --> SourceCredibilityService
+    AnalysisEngine --> ArticleFetcher
+    AnalysisEngine --> AnalyzeResponse
+
+    AnalyzeResponse *-- ModelScores
+    AnalyzeResponse *-- SourceCredibility
+    AnalyzeResponse *-- FactCheckClaim
+    AnalyzeResponse *-- SignalPhrase
+    

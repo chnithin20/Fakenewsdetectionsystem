@@ -1,0 +1,42 @@
+sequenceDiagram
+    actor U as User
+    participant FE as HTML/JS Frontend
+    participant API as FastAPI main.py
+    participant C as Redis Cache
+    participant AE as analysis_engine
+    participant AF as article_fetcher
+    participant NLP as nlp_classifier
+    participant FC as fact_checker
+    participant SC as source_credibility
+    participant DB as SQLite/Postgres
+
+    U->>FE: Enter URL/Text/Headline and click Analyze
+    FE->>API: POST /api/analyze {type, content}
+    API->>C: get_cached(request_key)
+    alt Cache hit
+      C-->>API: Cached AnalyzeResponse
+      API-->>FE: 200 AnalyzeResponse
+    else Cache miss
+      API->>AE: run_analysis(request)
+      alt type is URL
+        AE->>AF: fetch_article(url)
+        AF-->>AE: title + text + domain
+      end
+      AE->>NLP: classify_text(text)
+      NLP-->>AE: NLPResult
+      AE->>NLP: extract_signal_phrases(text)
+      NLP-->>AE: SignalPhrase[]
+      AE->>FC: check_claims(text)
+      FC-->>AE: FactCheckResult[]
+      AE->>SC: score_domain(domain,text)
+      SC-->>AE: CredibilityResult
+      AE-->>API: AnalyzeResponse
+      API->>DB: INSERT AnalysisRecord
+      API->>C: set_cached(request_key, response)
+      API-->>FE: 200 AnalyzeResponse
+    end
+    FE->>API: GET /api/history
+    API->>DB: SELECT recent analyses
+    DB-->>API: History rows
+    API-->>FE: HistoryResponse
+    

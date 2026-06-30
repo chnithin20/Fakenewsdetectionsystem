@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment
+.env
+venv/
+.venv/
+
+# Database
+*.db
+
+# Hugging Face Cache
+backend/model_cache/
+
+# Trained Models
+backend/my-fakenews-model/
+
+# Training Checkpoints
+tmp-train-smoke/
+tmp-train-smoke2/
+tmp-training-checkpoints/
+
+# Dataset
+backend/dataset/
+backend/data/
+
+# Evaluation
+*.pkl
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

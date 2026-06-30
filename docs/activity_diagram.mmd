@@ -1,0 +1,22 @@
+flowchart TD
+    A([Start]) --> B[Choose input type: URL, Text, or Headline]
+    B --> C[Validate input]
+    C -->|Invalid| D[Show validation error]
+    D --> B
+    C -->|Valid| E[POST /api/analyze]
+    E --> F{Input type URL?}
+    F -->|Yes| G[Fetch article content]
+    F -->|No| H[Use provided text/headline]
+    G --> I[Normalize analysis text]
+    H --> I
+    I --> J[Run NLP classifier]
+    J --> K[Extract signal phrases]
+    K --> L[Run fact-check claims search]
+    L --> M[Score source credibility]
+    M --> N[Aggregate verdict and credibility score]
+    N --> O[Store analysis record in DB]
+    O --> P[Cache response]
+    P --> Q[Return AnalyzeResponse JSON]
+    Q --> R[Render verdict cards and history item]
+    R --> S([End])
+    
